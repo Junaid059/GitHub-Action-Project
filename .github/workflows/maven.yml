@@ -53,7 +53,7 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Unit Test
-      run: mvn Test
+      run: mvn test
 
 
   build_project_and_sonar_scan:
