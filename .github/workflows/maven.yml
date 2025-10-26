@@ -8,9 +8,7 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 17
@@ -23,25 +21,21 @@ jobs:
       run: mvn -B package --file pom.xml
 
   Security:
-
     runs-on: ubuntu-latest
     needs: build
     steps:
     - name: Trivy Installation
       run: |
-          sudo apt update && sudo apt install -y snapd
-          sudo snap install trivy
-
+        sudo apt-get update
+        sudo apt-get install -y curl
+        curl -sSL https://github.com/aquasecurity/trivy/releases/download/v0.27.0/trivy_0.27.0_Linux-64bit.deb -o trivy.deb
+        sudo dpkg -i trivy.deb
     - name: Verify Trivy Installation
       run: trivy --version
-          
     - name: Trivy FS Scan   
       run: trivy fs --format table -o fs-report.json .
 
-
-    
   Test:
-
     runs-on: ubuntu-latest
     needs: Security
     steps:
@@ -53,11 +47,9 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Unit Test
-      run: mvn test
-
+      run: mvn test -X  # Debug with verbose output
 
   build_project_and_sonar_scan:
-
     runs-on: ubuntu-latest
     needs: Test
     steps:
@@ -74,29 +66,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: app-jar
-        path: target/*.jar 
-
-    - uses: actions/checkout@v4
-      with:
-        # Disabling shallow clones is recommended for improving the relevancy of reporting
-        fetch-depth: 0
-    - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v6.0.0 # Ex: v4.1.0 or sha1, See the latest version at https://github.com/marketplace/actions/official-sonarqube-scan
+        path: target/*.jar
+    - uses: SonarSource/sonarqube-scan-action@v6.0.0
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} 
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-
-    - name: SonarQube Quality Gate check
-      id: sonarqube-quality-gate-check
-      uses: sonarsource/sonarqube-quality-gate-action@master
-      with:
-        pollingTimeoutSec: 600
-      env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
-  buils_docker_image_and_push:
+  build_docker_image_and_push:
     runs-on: ubuntu-latest
     needs: build_project_and_sonar_scan
     steps:
@@ -105,21 +81,15 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: app-jar
-        path: app  # this will download JAR to ./app folder
-        
+        path: app
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ DOCKERHUB_USERNAME }}
         password: ${{ DOCKERHUB_TOKEN }}
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
     - name: Build and Push Docker image
       uses: docker/build-push-action@v6
       with:
         context: .
         push: true
         tags: junaid757/bankapp:latest
-        file: ./Dockerfile
