@@ -29,10 +29,11 @@ jobs:
     steps:
     - name: Trivy Installation
       run: |
-          sudo apt update && sudo apt install -y curl wget apt-transport-https lsb-release gnupg && \
-          curl -fsSL https://download.aquasecurity.io/trivy/release.asc | sudo tee /etc/apt/trusted.gpg.d/aquasecurity.asc && \
-          echo "deb https://download.aquasecurity.io/trivy/deb stable main" | sudo tee /etc/apt/sources.list.d/aquasecurity.list && \
-          sudo apt update && sudo apt install -y trivy  
+          sudo apt update && sudo apt install -y snapd
+          sudo snap install trivy
+
+    - name: Verify Trivy Installation
+      run: trivy --version
           
     - name: Trivy FS Scan   
       run: trivy fs --format table -o fs-report.json .
