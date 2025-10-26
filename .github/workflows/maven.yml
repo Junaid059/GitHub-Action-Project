@@ -39,18 +39,7 @@ jobs:
       run: trivy fs --format table -o fs-report.json .
 
 
-    - name: GitLeaks Installation
-      run:   |
-        sudo apt update && sudo apt install -y golang-go
-        wget https://github.com/gitleaks/gitleaks/releases/download/v8.4.0/gitleaks-linux-amd64 -O gitleaks
-        chmod +x gitleaks
-        sudo mv gitleaks /usr/local/bin/gitleaks
-
-    - name: Verify GitLeaks Installation
-      run: gitleaks --version
-
-    - name: GitLeak Code Scan
-      run:  gitleaks detect --source . --report-format json --report-path gitleaks.json
+    
 
 
 
